@@ -51,7 +51,8 @@ architecture() {
 CERTS_DIR="${HOME}/test-certs"
 GUEST_OS_DIR="${HOME}/cmld_guestos"
 ROOTFS_DIR="rootfs-builder"
-GUEST_NAME="bookworm"
+GUEST_NAME="trixie"
+GUEST_DISTRO="trixie"
 CONTAINER_NAME="${GUEST_NAME}container"
 INSTALL_PATH="${GUEST_OS_DIR}/operatingsystems/$(architecture)/"
 
@@ -78,15 +79,15 @@ cd "${GUEST_OS_DIR}"
 print "Initializing guest OS '${GUEST_NAME}'"
 printf "y\n" | cml_build_guestos init "${GUEST_NAME}" --pki "${CERTS_DIR}"
 
-# 3. Create Debian 12 rootfs
-print "Creating Debian 12 rootfs"
+# 3. Create the latest Debian rootfs
+print "Creating the latest Debian rootfs"
 mkdir "${ROOTFS_DIR}"
-sudo debootstrap bookworm "${ROOTFS_DIR}" "http://deb.debian.org/debian"
+sudo debootstrap "${GUEST_DISTRO}" "${ROOTFS_DIR}" "http://deb.debian.org/debian"
 
 # Create tar archive of rootfs
 print "Creating tar archive of rootfs"
-sudo tar -cf "${GUEST_NAME}.tar" -C "${ROOTFS_DIR}" .
-mkdir -p rootfs
+sudo tar --owner=0 --group=0 --numeric-owner -cf "${GUEST_NAME}.tar" -C "${ROOTFS_DIR}" .
+sudo mkdir -p rootfs
 mv "${GUEST_NAME}.tar" rootfs/"${GUEST_NAME}os.tar"
 
 # Build the guest OS
@@ -119,6 +120,8 @@ if [ ! -f "${INSTALL_PATH}/${GUEST_NAME}os-1/root.img" ]; then
 	echo "root.img does not exist!"
 	exit 1
 fi
+
+sudo systemctl restart cmld
 
 # Installing operating system
 print "Installing operating system"

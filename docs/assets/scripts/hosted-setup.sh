@@ -44,14 +44,21 @@ if id | grep -q "$GROUP_NAME"; then
 	echo "User is already in the '$GROUP_NAME' group"
 else
 	echo "Adding current user to group"
-	sudo usermod -aG cml-control "$(whoami)"
-	echo "Reloading groups, you may need to re-run the script to continue."
-	(newgrp "$GROUP_NAME")
+	sudo usermod -aG $GROUP_NAME "$USER"
+
+	echo "Restarting script with new group..."
+
+	exec sg "$GROUP_NAME" "$0" "$@"
 fi
 
 # Create the logging directory
 print "Creating log directory"
 sudo mkdir -p /var/log/cml/cml-scd
+
+# Create operatingsystems dir
+print "Creating operatingsystems directory"
+sudo mkdir -p /var/lib/cml/operatingsystems
+
 
 # Creating tokens
 if [ -d "/var/lib/cml/tokens/" ] && [ -n "$(ls -A '/var/lib/cml/tokens/')" ]; then
